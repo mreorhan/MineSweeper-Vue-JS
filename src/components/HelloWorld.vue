@@ -1,0 +1,217 @@
+<template>
+  <div class="d-flex justify-content-center">
+    <div>
+      <div class="d-flex justify-content-between mx-4 my-4">
+        <img src="../assets/LOGO.png" width="240" />
+        <div class="score align-self-center">Score: {{totalPoints}}</div>
+      </div>
+      <div class="d-flex justify-content-center mb-4">
+        <input type="text" v-model="name" class="mx-4 form-control" placeholder="Your name" />
+        <div class="mr-4">
+          <button
+            class="btn btn-secondary dropdown-toggle"
+            type="button"
+            id="dropdownMenuButton"
+            data-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >Size</button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" @click="mapSize=5">5X5</a>
+            <a class="dropdown-item" @click="mapSize=6">6X6</a>
+            <a class="dropdown-item" @click="mapSize=7">7X7</a>
+            <a class="dropdown-item" @click="mapSize=8">8X8</a>
+          </div>
+        </div>
+        <div class="btn btn-primary mr-4" @click="createCells">Start</div>
+      </div>
+      <div class="d-flex justify-content-center ml-3" v-if="mapSize &&ready">
+        <table class="mine-table">
+          <template v-for="(row,index) in tableItems">
+            <tr :key="index">
+              <template v-for="(item,index2) in row">
+                <td :key="index2">
+                  <template v-if="!item.selected">
+                    <img width="90" height="90" @click="press(item)" src="../assets/Rectangle.png" />
+                  </template>
+                  <template v-else-if="item.type =='tick'">
+                    <img width="90" height="90" src="../assets/Clear.png" />
+                  </template>
+                  <template v-else>
+                    <img width="90" height="90" src="../assets/Mine.png" />
+                  </template>
+                </td>
+              </template>
+            </tr>
+          </template>
+        </table>
+        <div class="card score-board mr-4">
+          <div class="card-body">
+            <h5 class="card-title">Top 10 Scores</h5>
+            <div
+              class="modal-body d-flex justify-content-between"
+              v-for="(item,index) in highScores"
+              :key="index"
+            >
+              <div>{{(index+1)+". score: "+item.name}}</div>
+              <div>{{item.score}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="endGameModal">
+        <transition name="modal">
+          <div class="modal-mask">
+            <div class="modal-wrapper">
+              <div class="modal-dialog end-game-modal">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h4 class="modal-title text-center">GAME OVER</h4>
+                  </div>
+                  <div class="modal-body d-flex justify-content-between">
+                    <div class>Your Score</div>
+                    <div class>{{totalPoints}}</div>
+                  </div>
+                  <div class="align-center mb-3">
+                    <div class="btn btn-warning btn-lg mr-2" @click="tryAgain()">Try Again</div>
+                    <div class="btn btn-success btn-lg" @click="newGame()">New Game</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "HelloWorld",
+  props: {
+    msg: String
+  },
+  data: () => ({
+    ready: false,
+    endGameModal: false,
+    name: "e",
+    highScores: [],
+    totalPoints: 0,
+    mapSize: null,
+    tableItems: []
+  }),
+  methods: {
+    press(item) {
+      if (item.type == "tick") this.totalPoints += 5;
+      else if (item.type == "mine") this.endGameModal = true;
+      item.selected = !item.selected;
+    },
+    createCells() {
+      this.tableItems = [];
+      this.totalPoints = 0;
+      this.ready = false;
+      const mapSize = this.mapSize;
+      const mineArray = [];
+
+      //unique mayın boşlukları oluşturmak için
+      while (mineArray.length < mapSize) {
+        const r = Math.floor(Math.random() * mapSize * mapSize);
+        if (mineArray.indexOf(r) === -1) mineArray.push(r);
+      }
+
+      let counter = 0;
+      const tableColumns = [];
+      for (let i = 0; i < mapSize; i++) {
+        const tableRowItems = [];
+        for (let cell = 0; cell < mapSize; cell++) {
+          if (mineArray.includes(counter))
+            tableRowItems.push({ type: "mine", selected: false });
+          else tableRowItems.push({ type: "tick", selected: false });
+          counter++;
+        }
+        this.tableItems.push(tableRowItems);
+      }
+      this.ready = true;
+    },
+    endGame() {
+      this.highScores.push({ name: this.name, score: this.totalPoints });
+      this.highScores.sort((a, b) => b.score - a.score);
+      if (this.highScores.length > 10) this.highScores.pop();
+    },
+    tryAgain() {
+      this.endGame();
+      this.createCells();
+      this.endGameModal = false;
+    },
+    newGame() {
+      this.highScores = [];
+      this.createCells();
+      this.name = "";
+      this.endGameModal = false;
+    }
+  },
+  created() {
+    // this.createCells();
+  }
+};
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+.score {
+  padding: 5px 15px;
+  background-color: #f7f9fa;
+  color: #91949f;
+  border-radius: 5px;
+  border: 1px solid #91949f;
+}
+.score-board {
+  width: 18rem;
+  margin: 8px;
+}
+.mine-table tr td {
+  padding: 6px;
+}
+.end-game-modal .modal-header {
+  padding: 0;
+}
+.end-game-modal .modal-title {
+  background-color: #00bce5;
+  padding: 10px;
+  color: #fff;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  font-weight: bold;
+}
+.text-center {
+  width: 100%;
+}
+h3 {
+  margin: 40px 0 0;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+li {
+  display: inline-block;
+  margin: 0 10px;
+}
+.modal-mask {
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: table;
+  transition: opacity 0.3s ease;
+}
+
+.modal-wrapper {
+  display: table-cell;
+  vertical-align: middle;
+}
+</style>
