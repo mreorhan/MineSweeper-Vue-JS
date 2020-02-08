@@ -105,7 +105,9 @@ export default {
       this.ready = true;
     },
     failed() {
-      this.tableItems.flat().map(i => (i.selected = true));
+      this.tableItems.flat().map(i => {
+        if (i.type == "mine") i.selected = true;
+      });
       clearTimeout(this.endGameTimeout);
       this.endGameTimeout = setTimeout(() => {
         this.endGameModal = true;
